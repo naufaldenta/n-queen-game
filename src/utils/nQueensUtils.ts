@@ -1,4 +1,4 @@
-import type { Position, GameState, AlgorithmStep, AlgorithmType } from '../types';
+import type { Position, AlgorithmStep} from '../types';
 
 export class NQueensSolver {
   private size: number;
