@@ -4,7 +4,6 @@ export class NQueensSolver {
   private size: number;
   private steps: AlgorithmStep[] = [];
   private solutionFound: boolean = false;
-  private bestSolution: Position[] = [];
   private minCost: number = Infinity;
 
   constructor(size: number) {
@@ -264,7 +263,6 @@ export class NQueensSolver {
   public solveBranchAndBound(): AlgorithmStep[] {
     this.steps = [];
     this.solutionFound = false;
-    this.bestSolution = [];
     this.minCost = Infinity;
 
     const initialBoard = Array(this.size).fill(null).map(() => Array(this.size).fill(0));
@@ -316,7 +314,6 @@ export class NQueensSolver {
       if (currentNode.level >= this.size) {
         if (currentNode.cost === 0) { // Solusi valid (tanpa konflik)
           this.solutionFound = true;
-          this.bestSolution = [...currentNode.queens];
           this.minCost = currentNode.cost;
 
           this.steps.push({
