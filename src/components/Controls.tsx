@@ -38,32 +38,39 @@ const Controls: React.FC<ControlsProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 space-y-4">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Kontrol Permainan</h2>
-      
+
       {/* Algorithm Selection */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">
           Pilih Algoritma:
         </label>
-        <div className="flex space-x-4">
+        <div className="grid grid-cols-1 gap-2">
           <button
             onClick={() => setAlgorithmType('DFS')}
-            className={`px-4 py-2 rounded-md font-medium transition-colors ${
-              algorithmType === 'DFS'
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${algorithmType === 'DFS'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+              }`}
           >
             DFS (Depth-First Search)
           </button>
           <button
             onClick={() => setAlgorithmType('BFS')}
-            className={`px-4 py-2 rounded-md font-medium transition-colors ${
-              algorithmType === 'BFS'
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${algorithmType === 'BFS'
                 ? 'bg-green-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+              }`}
           >
             BFS (Breadth-First Search)
+          </button>
+          <button
+            onClick={() => setAlgorithmType('BNB')}
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${algorithmType === 'BNB'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+          >
+            B&B (Branch and Bound)
           </button>
         </div>
       </div>
@@ -92,11 +99,10 @@ const Controls: React.FC<ControlsProps> = ({
       <div className="flex space-x-2">
         <button
           onClick={isPlaying ? onPause : onStart}
-          className={`flex-1 px-4 py-2 rounded-md font-medium transition-colors flex items-center justify-center space-x-2 ${
-            isPlaying
+          className={`flex-1 px-4 py-2 rounded-md font-medium transition-colors flex items-center justify-center space-x-2 ${isPlaying
               ? 'bg-red-600 hover:bg-red-700 text-white'
               : 'bg-green-600 hover:bg-green-700 text-white'
-          }`}
+            }`}
         >
           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           <span>{isPlaying ? 'Pause' : 'Start'}</span>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Waves, RotateCcw, List } from 'lucide-react';
+import { Search, Waves, RotateCcw, List, Scissors, BarChart3 } from 'lucide-react';
 import type { AlgorithmType } from '../types';
 
 interface AlgorithmInfoProps {
@@ -48,7 +48,7 @@ const AlgorithmInfo: React.FC<AlgorithmInfoProps> = ({ algorithmType }) => {
             </p>
           </div>
         </div>
-      ) : (
+      ) : algorithmType === 'BFS' ? (
         <div className="space-y-4">
           <div>
             <div className="flex items-center space-x-2 mb-2">
@@ -80,6 +80,56 @@ const AlgorithmInfo: React.FC<AlgorithmInfoProps> = ({ algorithmType }) => {
             </p>
             <p className="text-sm text-green-800">
               <strong>Kompleksitas Ruang:</strong> Lebih besar karena menyimpan banyak state
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center space-x-2 mb-2">
+              <BarChart3 className="w-5 h-5 text-purple-600" />
+              <h4 className="font-semibold text-gray-700">Branch and Bound (B&B)</h4>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              Branch and Bound adalah algoritma optimasi yang menggunakan bounding function 
+              untuk memangkas cabang pencarian yang tidak menjanjikan, sehingga lebih efisien.
+            </p>
+          </div>
+          
+          <div>
+            <div className="flex items-center space-x-2 mb-2">
+              <Scissors className="w-5 h-5 text-red-600" />
+              <h5 className="font-medium text-gray-700">Konsep Pruning:</h5>
+            </div>
+            <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+              <li><strong>Branching:</strong> Membagi masalah menjadi sub-masalah yang lebih kecil</li>
+              <li><strong>Bounding:</strong> Menghitung estimasi cost terbaik untuk setiap cabang</li>
+              <li><strong>Pruning:</strong> Memangkas cabang dengan bound ≥ solusi terbaik saat ini</li>
+              <li><strong>Priority Queue:</strong> Mengeksplorasi cabang dengan bound terkecil terlebih dahulu</li>
+            </ul>
+          </div>
+
+          <div>
+            <div className="flex items-center space-x-2 mb-2">
+              <BarChart3 className="w-5 h-5 text-purple-600" />
+              <h5 className="font-medium text-gray-700">Fungsi Bounding untuk N-Queens:</h5>
+            </div>
+            <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+              <li><strong>Cost:</strong> Jumlah konflik antar queens yang sudah ditempatkan</li>
+              <li><strong>Bound:</strong> Cost saat ini + estimasi konflik minimum di masa depan</li>
+              <li><strong>Heuristik:</strong> Estimasi berdasarkan queens yang belum ditempatkan</li>
+            </ul>
+          </div>
+          
+          <div className="bg-purple-50 p-3 rounded-md">
+            <p className="text-sm text-purple-800">
+              <strong>Keunggulan:</strong> Lebih efisien dari brute force, menjamin solusi optimal
+            </p>
+            <p className="text-sm text-purple-800">
+              <strong>Kompleksitas:</strong> Tergantung kualitas bounding function
+            </p>
+            <p className="text-sm text-purple-800">
+              <strong>Aplikasi:</strong> Masalah optimasi, traveling salesman, knapsack problem
             </p>
           </div>
         </div>

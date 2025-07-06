@@ -1,10 +1,10 @@
 import React from 'react';
-import { Crown, X, Search, CornerUpLeft, HelpCircle } from 'lucide-react';
-import type { AlgorithmStep } from '../types';
+import { Crown, X, Search, CornerUpLeft, HelpCircle, Scissors, BarChart3 } from 'lucide-react';
+import type { AlgorithmStep, AlgorithmType } from '../types';
 
 interface StepInfoProps {
   step: AlgorithmStep | null;
-  algorithmType: 'DFS' | 'BFS';
+  algorithmType: AlgorithmType;
 }
 
 const StepInfo: React.FC<StepInfoProps> = ({ step, algorithmType }) => {
@@ -23,12 +23,15 @@ const StepInfo: React.FC<StepInfoProps> = ({ step, algorithmType }) => {
       case 'remove': return <X className="w-6 h-6" />;
       case 'check': return <Search className="w-6 h-6" />;
       case 'backtrack': return <CornerUpLeft className="w-6 h-6" />;
+      case 'bound': return <BarChart3 className="w-6 h-6" />;
+      case 'prune': return <Scissors className="w-6 h-6" />;
       default: return <HelpCircle className="w-6 h-6" />;
     }
   };
 
   const getActionColor = (action: string, isValid: boolean) => {
-    if (action === 'backtrack') return 'text-red-600';
+    if (action === 'backtrack' || action === 'prune') return 'text-red-600';
+    if (action === 'bound') return 'text-purple-600';
     if (action === 'place' && isValid) return 'text-green-600';
     if (!isValid) return 'text-red-600';
     return 'text-blue-600';
@@ -64,6 +67,33 @@ const StepInfo: React.FC<StepInfoProps> = ({ step, algorithmType }) => {
             <span className="ml-2">{step.queens.length}</span>
           </div>
         </div>
+
+        {/* Branch and Bound specific information */}
+        {algorithmType === 'BNB' && (step.bound !== undefined || step.cost !== undefined || step.level !== undefined) && (
+          <div className="mt-4 p-3 bg-purple-50 rounded-md border border-purple-200">
+            <h4 className="font-semibold text-purple-800 mb-2">📊 Branch & Bound Info:</h4>
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              {step.cost !== undefined && (
+                <div>
+                  <span className="font-medium text-purple-600">Cost:</span>
+                  <span className="ml-1 font-bold">{step.cost}</span>
+                </div>
+              )}
+              {step.bound !== undefined && (
+                <div>
+                  <span className="font-medium text-purple-600">Bound:</span>
+                  <span className="ml-1 font-bold">{step.bound}</span>
+                </div>
+              )}
+              {step.level !== undefined && (
+                <div>
+                  <span className="font-medium text-purple-600">Level:</span>
+                  <span className="ml-1 font-bold">{step.level}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

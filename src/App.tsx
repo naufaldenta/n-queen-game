@@ -33,7 +33,22 @@ const App: React.FC = () => {
   // Generate steps when algorithm type or board size changes
   const generateSteps = useCallback(() => {
     const solver = new NQueensSolver(boardSize);
-    const newSteps = algorithmType === 'DFS' ? solver.solveDFS() : solver.solveBFS();
+    let newSteps: AlgorithmStep[] = [];
+    
+    switch (algorithmType) {
+      case 'DFS':
+        newSteps = solver.solveDFS();
+        break;
+      case 'BFS':
+        newSteps = solver.solveBFS();
+        break;
+      case 'BNB':
+        newSteps = solver.solveBranchAndBound();
+        break;
+      default:
+        newSteps = solver.solveDFS();
+    }
+    
     setSteps(newSteps);
     setCurrentStepIndex(0);
     setIsPlaying(false);
@@ -118,10 +133,9 @@ const App: React.FC = () => {
           
           <div className="max-w-3xl mx-auto">
             <p className="text-gray-600 text-lg leading-relaxed mb-4">
-              Visualisasi algoritma <span className="font-semibold text-blue-600">DFS</span> dan <span className="font-semibold text-green-600">BFS</span> untuk menyelesaikan puzzle N-Queens. 
-              Lihat bagaimana algoritma mencari solusi dengan teknik backtracking secara real-time!
+              Visualisasi algoritma <span className="font-semibold text-blue-600">DFS</span>, <span className="font-semibold text-green-600">BFS</span>, dan <span className="font-semibold text-purple-600">Branch & Bound</span> untuk menyelesaikan puzzle N-Queens. 
+              Lihat bagaimana algoritma mencari solusi dengan berbagai teknik optimasi secara real-time!
             </p>
-            
           </div>
         </header>
 
@@ -136,7 +150,7 @@ const App: React.FC = () => {
             />
             
             {/* Success Message */}
-            {currentStep && currentStep.message.includes('SOLUSI DITEMUKAN') && (
+            {currentStep && (currentStep.message.includes('SOLUSI DITEMUKAN') || currentStep.message.includes('SOLUSI OPTIMAL')) && (
               <div className="bg-green-100 border border-green-400 text-green-700 px-6 py-4 rounded-lg shadow-lg">
                 <div className="flex items-center">
                   <Sparkles className="w-6 h-6 mr-3 text-green-600" />
@@ -144,6 +158,9 @@ const App: React.FC = () => {
                     <p className="font-bold text-lg">🎉 Selamat! Puzzle berhasil diselesaikan!</p>
                     <p className="text-sm mt-1">
                       Semua {boardSize} queens telah ditempatkan dengan aman menggunakan algoritma <span className="font-semibold">{algorithmType}</span>
+                      {algorithmType === 'BNB' && currentStep.cost !== undefined && (
+                        <span> dengan cost optimal: {currentStep.cost}</span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -185,25 +202,48 @@ const App: React.FC = () => {
                     <span className="text-gray-600 font-medium">Total Langkah:</span>
                     <span className="font-bold text-lg">{steps.length}</span>
                   </div>
-                  <div className="flex justify-between items-center p-2 bg-red-50 rounded">
-                    <span className="text-gray-600 font-medium">Langkah Backtrack:</span>
-                    <span className="font-bold text-lg text-red-600">
-                      {steps.filter(s => s.action === 'backtrack').length}
-                    </span>
-                  </div>
+                  
+                  {algorithmType === 'DFS' && (
+                    <div className="flex justify-between items-center p-2 bg-red-50 rounded">
+                      <span className="text-gray-600 font-medium">Langkah Backtrack:</span>
+                      <span className="font-bold text-lg text-red-600">
+                        {steps.filter(s => s.action === 'backtrack').length}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {algorithmType === 'BNB' && (
+                    <>
+                      <div className="flex justify-between items-center p-2 bg-red-50 rounded">
+                        <span className="text-gray-600 font-medium">Cabang Dipangkas:</span>
+                        <span className="font-bold text-lg text-red-600">
+                          {steps.filter(s => s.action === 'prune').length}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-purple-50 rounded">
+                        <span className="text-gray-600 font-medium">Evaluasi Bound:</span>
+                        <span className="font-bold text-lg text-purple-600">
+                          {steps.filter(s => s.action === 'bound').length}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  
                   <div className="flex justify-between items-center p-2 bg-green-50 rounded">
                     <span className="text-gray-600 font-medium">Queens Ditempatkan:</span>
                     <span className="font-bold text-lg text-green-600">
                       {steps.filter(s => s.action === 'place').length}
                     </span>
                   </div>
+                  
                   <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
                     <span className="text-gray-600 font-medium">Ukuran Papan:</span>
                     <span className="font-bold text-lg text-blue-600">{boardSize}x{boardSize}</span>
                   </div>
-                  <div className="flex justify-between items-center p-2 bg-purple-50 rounded">
+                  
+                  <div className="flex justify-between items-center p-2 bg-yellow-50 rounded">
                     <span className="text-gray-600 font-medium">Efisiensi:</span>
-                    <span className="font-bold text-lg text-purple-600">
+                    <span className="font-bold text-lg text-yellow-600">
                       {steps.length > 0 ? Math.round((steps.filter(s => s.action === 'place').length / steps.length) * 100) : 0}%
                     </span>
                   </div>
@@ -220,14 +260,16 @@ const App: React.FC = () => {
               <span className="font-semibold">N-Queens Puzzle Solver</span> - Dibuat dengan ❤️ menggunakan React, TypeScript, dan Tailwind CSS
             </p>
             <p className="text-xs">
-              Visualisasi algoritma DFS, BFS, dan Backtracking untuk pembelajaran computer science
+              Visualisasi algoritma DFS, BFS, dan Branch & Bound untuk pembelajaran Kompleksitas Algoritma.
             </p>
             <div className="mt-4 flex justify-center space-x-4 text-xs">
-              <span>🎯 Interactive Learning</span>
+              <span>Interactive Learning</span>
               <span>•</span>
-              <span>🧠 Algorithm Visualization</span>
+              <span>Algorithm Visualization</span>
               <span>•</span>
-              <span>🎮 Educational Tool</span>
+              <span>Educational Tool</span>
+              <span>•</span>
+              <span>Optimization Techniques</span>
             </div>
           </div>
         </footer>

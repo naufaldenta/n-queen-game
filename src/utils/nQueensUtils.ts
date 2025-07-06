@@ -1,9 +1,11 @@
-import type { Position, AlgorithmStep} from '../types';
+import type { Position, AlgorithmStep, BranchAndBoundNode } from '../types';
 
 export class NQueensSolver {
   private size: number;
   private steps: AlgorithmStep[] = [];
   private solutionFound: boolean = false;
+  private bestSolution: Position[] = [];
+  private minCost: number = Infinity;
 
   constructor(size: number) {
     this.size = size;
@@ -29,6 +31,38 @@ export class NQueensSolver {
     return true;
   }
 
+  // Hitung jumlah konflik untuk Branch and Bound
+  private calculateConflicts(queens: Position[]): number {
+    let conflicts = 0;
+    for (let i = 0; i < queens.length; i++) {
+      for (let j = i + 1; j < queens.length; j++) {
+        const queen1 = queens[i];
+        const queen2 = queens[j];
+
+        // Cek konflik kolom
+        if (queen1.col === queen2.col) conflicts++;
+
+        // Cek konflik diagonal
+        if (Math.abs(queen1.row - queen2.row) === Math.abs(queen1.col - queen2.col)) {
+          conflicts++;
+        }
+      }
+    }
+    return conflicts;
+  }
+
+  // Hitung lower bound untuk Branch and Bound
+  private calculateLowerBound(queens: Position[], level: number): number {
+    // Current cost (konflik yang ada)
+    const currentCost = this.calculateConflicts(queens);
+
+    // Estimasi cost minimum untuk sisa queens
+    const remainingQueens = this.size - level;
+    const estimatedFutureCost = Math.max(0, remainingQueens - 1);
+
+    return currentCost + estimatedFutureCost;
+  }
+
   // Dapatkan posisi queens dari board
   private getQueensFromBoard(board: number[][]): Position[] {
     const queens: Position[] = [];
@@ -52,7 +86,7 @@ export class NQueensSolver {
     this.steps = [];
     this.solutionFound = false;
     const board = Array(this.size).fill(null).map(() => Array(this.size).fill(0));
-    
+
     this.steps.push({
       board: this.copyBoard(board),
       queens: [],
@@ -138,7 +172,7 @@ export class NQueensSolver {
   public solveBFS(): AlgorithmStep[] {
     this.steps = [];
     this.solutionFound = false;
-    
+
     interface BFSState {
       board: number[][];
       row: number;
@@ -147,7 +181,7 @@ export class NQueensSolver {
 
     const queue: BFSState[] = [];
     const initialBoard = Array(this.size).fill(null).map(() => Array(this.size).fill(0));
-    
+
     queue.push({
       board: initialBoard,
       row: 0,
@@ -165,7 +199,7 @@ export class NQueensSolver {
 
     while (queue.length > 0 && !this.solutionFound) {
       const currentState = queue.shift()!;
-      
+
       // Jika semua queens sudah ditempatkan
       if (currentState.row >= this.size) {
         this.solutionFound = true;
@@ -218,6 +252,156 @@ export class NQueensSolver {
             action: 'check',
             isValid: false,
             message: `✗ Posisi (${currentState.row}, ${col}) tidak valid - Diabaikan dalam BFS.`
+          });
+        }
+      }
+    }
+
+    return this.steps;
+  }
+
+  // Branch and Bound Implementation
+  public solveBranchAndBound(): AlgorithmStep[] {
+    this.steps = [];
+    this.solutionFound = false;
+    this.bestSolution = [];
+    this.minCost = Infinity;
+
+    const initialBoard = Array(this.size).fill(null).map(() => Array(this.size).fill(0));
+    const initialNode: BranchAndBoundNode = {
+      board: initialBoard,
+      queens: [],
+      level: 0,
+      cost: 0,
+      bound: this.calculateLowerBound([], 0)
+    };
+
+    // Priority queue (min-heap berdasarkan bound)
+    const priorityQueue: BranchAndBoundNode[] = [initialNode];
+
+    this.steps.push({
+      board: this.copyBoard(initialBoard),
+      queens: [],
+      currentPosition: { row: 0, col: 0 },
+      action: 'bound',
+      isValid: true,
+      message: `Memulai Branch and Bound untuk ${this.size}-Queens. Menggunakan bounding function untuk memangkas cabang yang tidak optimal.`,
+      bound: initialNode.bound,
+      cost: initialNode.cost,
+      level: initialNode.level
+    });
+
+    while (priorityQueue.length > 0 && !this.solutionFound) {
+      // Sort berdasarkan bound (ascending)
+      priorityQueue.sort((a, b) => a.bound - b.bound);
+      const currentNode = priorityQueue.shift()!;
+
+      // Pruning: jika bound lebih besar dari solusi terbaik yang ada
+      if (currentNode.bound >= this.minCost) {
+        this.steps.push({
+          board: this.copyBoard(currentNode.board),
+          queens: currentNode.queens,
+          currentPosition: { row: currentNode.level, col: 0 },
+          action: 'prune',
+          isValid: false,
+          message: `✂️ PRUNING: Node dengan bound ${currentNode.bound} dipangkas karena >= minCost ${this.minCost}`,
+          bound: currentNode.bound,
+          cost: currentNode.cost,
+          level: currentNode.level
+        });
+        continue;
+      }
+
+      // Jika sudah mencapai solusi lengkap
+      if (currentNode.level >= this.size) {
+        if (currentNode.cost === 0) { // Solusi valid (tanpa konflik)
+          this.solutionFound = true;
+          this.bestSolution = [...currentNode.queens];
+          this.minCost = currentNode.cost;
+
+          this.steps.push({
+            board: this.copyBoard(currentNode.board),
+            queens: currentNode.queens,
+            currentPosition: { row: currentNode.level - 1, col: -1 },
+            action: 'check',
+            isValid: true,
+            message: `🎉 SOLUSI OPTIMAL DITEMUKAN! Cost: ${currentNode.cost}, Bound: ${currentNode.bound}`,
+            bound: currentNode.bound,
+            cost: currentNode.cost,
+            level: currentNode.level
+          });
+          break;
+        }
+        continue;
+      }
+
+      // Eksplorasi semua kemungkinan posisi di level saat ini
+      for (let col = 0; col < this.size; col++) {
+        this.steps.push({
+          board: this.copyBoard(currentNode.board),
+          queens: currentNode.queens,
+          currentPosition: { row: currentNode.level, col },
+          action: 'check',
+          isValid: true,
+          message: `B&B Level ${currentNode.level}: Evaluasi posisi (${currentNode.level}, ${col})`,
+          bound: currentNode.bound,
+          cost: currentNode.cost,
+          level: currentNode.level
+        });
+
+        // Buat node baru
+        const newBoard = this.copyBoard(currentNode.board);
+        newBoard[currentNode.level][col] = 1;
+        const newQueens = [...currentNode.queens, { row: currentNode.level, col }];
+        const newCost = this.calculateConflicts(newQueens);
+        const newBound = this.calculateLowerBound(newQueens, currentNode.level + 1);
+
+        const newNode: BranchAndBoundNode = {
+          board: newBoard,
+          queens: newQueens,
+          level: currentNode.level + 1,
+          cost: newCost,
+          bound: newBound
+        };
+
+        this.steps.push({
+          board: this.copyBoard(newBoard),
+          queens: newQueens,
+          currentPosition: { row: currentNode.level, col },
+          action: 'bound',
+          isValid: newBound < this.minCost,
+          message: `📊 Node baru: Cost=${newCost}, Bound=${newBound}. ${newBound < this.minCost ? 'Ditambahkan ke queue' : 'Akan dipangkas'}`,
+          bound: newBound,
+          cost: newCost,
+          level: newNode.level
+        });
+
+        // Hanya tambahkan ke queue jika bound masih promising
+        if (newBound < this.minCost) {
+          priorityQueue.push(newNode);
+
+          this.steps.push({
+            board: this.copyBoard(newBoard),
+            queens: newQueens,
+            currentPosition: { row: currentNode.level, col },
+            action: 'place',
+            isValid: true,
+            message: `✓ Queen ditempatkan di (${currentNode.level}, ${col}) - Node ditambahkan ke priority queue`,
+            bound: newBound,
+            cost: newCost,
+            level: newNode.level
+          });
+        } else {
+          this.steps.push({
+            board: this.copyBoard(currentNode.board),
+            queens: currentNode.queens,
+            currentPosition: { row: currentNode.level, col },
+            action: 'prune',
+            isValid: false,
+            message: `✂️ Posisi (${currentNode.level}, ${col}) dipangkas: bound ${newBound} >= minCost ${this.minCost}`,
+            bound: newBound,
+            cost: newCost,
+            level: currentNode.level
           });
         }
       }
